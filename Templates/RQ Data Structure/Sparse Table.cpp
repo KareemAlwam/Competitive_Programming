@@ -1,56 +1,38 @@
 #include<bits/stdc++.h>
 using namespace std;
 #define ll long long
-const int N=2e5+5;
-ll n,q,s[N],T[N][22],Log[N];
-ll merge(ll a,ll b)
-{
-    return min(a,b);
+const int N = 2e5 + 5;
+ll n, q, S[N], T[N][22], Log[N];
+ll merge(ll a, ll b){return return (S[a] >= S[b] ? a : b);}
+void build(){
+  for (int i = 0; i < n; i++)
+    T[i][0] = si;
+  for (int pw = 1; (1 << pw) <= n; pw++)
+    for (int i = 0; i + (1 << pw) <= n; i++)
+      T[i][pw] = merge(T[i][pw - 1], T[i + (1 << (pw - 1))][pw - 1]);
 }
-void build()
-{
-    for(int i=0;i<n;i++)
-    {
-        T[i][0]=s[i];
-    }
-    for(int pw=1;(1<<pw)<=n;pw++) 
-    {
-        for(int i=0;i+(1<<pw)<=n;i++)
-        {
-            T[i][pw]=merge(T[i][pw-1],T[i+(1<<(pw-1))][pw-1]);
-        }
-    }
+
+///// return the index
+ll query(int l, int r){ // O(log(n)) for all types
+  if (r < l)
+    return LLONG_MAX;
+  int sz = r - l + 1;
+  ll ret = LLONG_MAX;
+  for (int i = 0; i < 22; i++)
+    if ((sz >> i) & 1)
+      return merge(query(l + (1 << i), r), T[l][i]);
+  return ret;
 }
-ll query(int l,int r)
-{
-    if(r<l)
-    {
-        return LLONG_MAX;
-    }
-    int sz=r-l+1;
-    ll ret=LLONG_MAX;
-    for(int i=0;i<22;i++)
-    {
-        if((sz>>i)&1)
-        {
-            return merge(query(l+(1<<i),r),T[l][i]);
-        }
-    }
-    return ret;
+ll query2(int l, int r){ // O(1) but not for sum , xor , product
+  int sz = r - l + 1;
+  int pw = Log[sz];
+  return merge(T[l][pw], T[r - (1 << pw) + 1][pw]);
 }
-ll query2(int l,int r)
-{
-    int sz=r-l+1;
-    int pw=Log[sz];
-    return merge(T[l][pw],T[r-(1<<pw)+1][pw]);
+void preCount(){
+  Log[1] = 0;
+  for (int i = 2; i < N; i++)
+    Log[i] = Log[i >> 1] + 1;
 }
-void preCount()
-{
-    Log[1]=0;
-    for(int i=2;i<N;i++)
-    {
-        Log[i]=Log[i>>1]+1;
-    }
 }
 signed main()
 {
@@ -65,7 +47,7 @@ signed main()
     while(q--)
     {
         int l,r;cin>>l>>r;
-        cout<<query(--l,--r)<<'\n';
+        cout<<s[query(--l,--r)]<<'\n';
     }
     return 0;
 }
