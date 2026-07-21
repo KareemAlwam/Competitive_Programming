@@ -1,50 +1,70 @@
-struct MergeSortSegmentTree{
-private:
-	vector<vector<int>> seg;
-	int sz, skip = 0;
-	void merge(vector<int> &ret, vector<int> &a, vector<int> &b){
-		int l = 0, r = 0;
-		ret.reserve(a.size() + b.size());
-		while (l < a.size() && r < b.size()){
-			if (a[l] < b[r])
-				ret.push_back(a[l++]);
-			else
-				ret.push_back(b[r++]);
-		}
-		while (l < a.size())
-			ret.push_back(a[l++]);
-		while (r < b.size())
-			ret.push_back(b[r++]);
-	}
-	void build(vector<int> &s, int l, int r, int node){
-		if (l == r){
-			if (l < s.size())
-				seg[node] = {s[l]};
-			return;
-		}
-		int mid = l + r >> 1;
-		build(s, l, mid, 2 * node + 1);
-		build(s, mid + 1, r, 2 * node + 2);
-		merge(seg[node], seg[2 * node + 1], seg[2 * node + 2]);
-	}
-	int query(int l, int r, int node, int lx, int rx, int k){
-		if (l > rx || r < lx)
-			return skip;
-		if (l >= lx && r <= rx)
-			return lower_bound(seg[node].begin(), seg[node].end(), k) - seg[node].begin();
-		int mid = l + r >> 1;
-		return query(l, mid, 2 * node + 1, lx, rx, k) + query(mid + 1, r, 2 * node + 2, lx, rx, k);
-	}
+#include <bits/stdc++.h>
+using namespace std;
 
-public:
-	MergeSortSegmentTree(vector<int> &s){
-		sz = 1;
-		while (sz < s.size())
-			sz *= 2;
-		seg = vector<vector<int>>(sz * 2);
-		build(s, 0, sz - 1, 0);
-	}
-	int query(int l, int r, int val){
-		return query(0, sz - 1, 0, l, r, val);
-	}
+struct MergeSortTree {
+    int n;               // size of original array (not power of two)
+    int size;            // power of two >= n
+    vector<vector<int>> tree;
+
+    MergeSortTree(const vector<int>& a) {
+        n = (int)a.size();
+        size = 1;
+        while (size < n) size <<= 1;
+        tree.assign(2 * size, {});
+
+        // place leaves at positions [size, size+n)
+        for (int i = 0; i < n; ++i)
+            tree[size + i] = {a[i]};
+
+        // build internal nodes iteratively
+        for (int i = size - 1; i >= 1; --i) {
+            const auto& L = tree[i << 1];
+            const auto& R = tree[i << 1 | 1];
+            tree[i].resize(L.size() + R.size());
+            merge(L.begin(), L.end(), R.begin(), R.end(), tree[i].begin());
+        }
+    }
+
+    // count numbers in [c, d] among a[l..r] inclusive
+    int query(int l, int r, int c, int d) const {
+        if (l > r) return 0;
+        int res = 0;
+        l += size;
+        r += size + 1;    // convert to half‑open [l, r+1)
+
+        while (l < r) {
+            if (l & 1) {
+                const auto& vec = tree[l++];
+                res += upper_bound(vec.begin(), vec.end(), d) -
+                       lower_bound(vec.begin(), vec.end(), c);
+            }
+            if (r & 1) {
+                const auto& vec = tree[--r];
+                res += upper_bound(vec.begin(), vec.end(), d) -
+                       lower_bound(vec.begin(), vec.end(), c);
+            }
+            l >>= 1;
+            r >>= 1;
+        }
+        return res;
+    }
 };
+
+void solve() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, q;
+    cin >> n >> q;
+    vector<int> x(n);
+    for (int& v : x) cin >> v;
+
+    MergeSortTree mst(x);
+
+    while (q--) {
+        int a, b, c, d;
+        cin >> a >> b >> c >> d;
+        --a; --b;   // convert to 0‑based inclusive
+        cout << mst.query(a, b, c, d) << '\n';
+    }
+}
