@@ -36,6 +36,7 @@ struct LazySegTree{
 	vector<bool> hasLazy; // whether a node has a pending update
 
 	LazySegTree(int n){
+		this->n = n;
 		tree.assign(4 * n, Node());
 		lazy.assign(4 * n, 0);
 		hasLazy.assign(4 * n, false);
